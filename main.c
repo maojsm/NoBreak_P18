@@ -58,6 +58,8 @@ void AD_Init()
 
 void main(){
 
+  char txt[20];
+
   INTCON = 0;                     // disable all interrupts
   Delay_ms(100);                  // Wait for UART module to estabilize
   UART1_Init(2400);               // Initialize UART module 2400 bps
@@ -76,6 +78,10 @@ void main(){
   Conversor  = 1;                         // Liga conversor
 
   while (1) {
+    
+
+    
+    
     Trede  = ADC_read(0);                 // get ADC value from 0nd channel
     tlong = (long)Trede * 3000;           // covert adc reading to milivolts
     tlong = tlong / 1023;                  // 0..1023 -> 0-5000mV (*5000)
@@ -135,23 +141,29 @@ void main(){
     LCD_Chr_CP('V');
     Delay_ms(300);
 
-     Tsaida  = ADC_read(3);                   // get ADC value from 0nd channel
+    Tsaida  = ADC_read(3);                   // get ADC value from 0nd channel
     tlong = (long)Tsaida * 3000;           // covert adc reading to milivolts
     tlong = tlong / 1023;                  // 0..1023 -> 0-5000mV
 
-    ch     = tlong / 1000;                 // extract volts digit
-    LCD_Chr(2,13,48+ch);                    // write ASCII digit at 2nd row, 9th column
-    //LCD_Chr_CP('.');
+    sprintf(txt, "%f", tlong/10. );
+    Lcd_Out(2,12, txt);
 
-    ch    = (tlong / 100) % 10;            // extract 0.1 volts digit
-    LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
+//    ch     = tlong / 1000;                 // extract volts digit
+//    LCD_Chr(2,13,48+ch);                    // write ASCII digit at 2nd row, 9th column
+//    //LCD_Chr_CP('.');
+//
+//    ch    = (tlong / 100) % 10;            // extract 0.1 volts digit
+//    LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
+//
+//    ch    = (tlong / 10) % 10;             // extract 0.01 volts digit
+//    LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
+//
+//
+//    //ch    = tlong % 10;                    // extract 0.001 volts digit
+//    //LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
+//    LCD_Chr_CP('V');
 
-    ch    = (tlong / 10) % 10;             // extract 0.01 volts digit
-    LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
 
-    //ch    = tlong % 10;                    // extract 0.001 volts digit
-    //LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-    LCD_Chr_CP('V');
     Delay_ms(300);
   }
 }
