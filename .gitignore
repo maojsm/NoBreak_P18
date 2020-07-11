@@ -1,0 +1,34 @@
+# Created by https://www.gitignore.io/api/mikroc
+# Edit at https://www.gitignore.io/?templates=mikroc
+
+### MikroC ###
+# Backup
+*.pdsbak
+
+# Debug
+Debug
+
+# Generated files
+*.workspace
+*.log
+*.bmk
+*.brk
+#*.cfg  # arquivo de configuração do microprocessador
+*.dbg
+*.dct
+*.dlt
+# *.hex  # arquivo com o programa compilado
+*.lst
+*.dic
+*_callertable.txt
+*.user.dic
+*.asm
+*.c.ini
+*.h.ini
+*.cp
+*.mcl
+*.emcl
+*.lst.ini  #arquivo gerado do programa completo em Assembler
+*.asm.ini  #arquivo gerado do programa em Assembler
+
+# End of https://www.gitignore.io/api/mikroc
