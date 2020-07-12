@@ -42,6 +42,28 @@ long AD_Read_Tensao( uint8_t numAD ) {
 }//~
 
 
+void MostraTensoes_LCD(long  Trede, long Tfonte, long Tbateria, long Tsaida ){
+
+    char  txt[20];
+    
+    /* Mostra Rede no LCD*/
+    sprinti(txt, "Rede:%uV", (uint16_t)Trede/10 );
+    Lcd_Out(1,1, txt);
+
+    /* Mostra Fonte no LCD */
+    sprintf(txt, "%2.1fV", Tfonte/100. );
+    Lcd_Out(1,13, txt);
+
+    /* Mostra Bateria no LCD */
+    sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
+    Lcd_Out(2,1, txt);
+
+    /* Mostra Tensão de Saída do NoBreak no LCD */
+    sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
+    Lcd_Out(2,13, txt);
+
+}
+
 
 /*=============================================================================
       ************** INICIO DO PROGRAMA ********************
@@ -57,6 +79,7 @@ void main( void ) {
 
     long  Trede=0, Tfonte =0, Tbateria =0, Tsaida =0;
     char  txt[20];
+    char  i=0;
 
     /* Copnfigurações do Hardware - PIC, ADC, LCD, etc */
     HAL_P18_Initialize();
@@ -71,6 +94,35 @@ void main( void ) {
 
     /* Liga o Conversor */
     Conversor  = true;
+    
+    /* Aguarda o Conversor partir e atingir 112V */
+    for (i=0; i < 10 ; i++) {
+    
+        /* Faz a leitura das Tensões */
+        Trede     = AD_Read_Tensao( AD_Rede );
+        Tfonte    = AD_Read_Tensao( AD_Fonte );
+        Tbateria  = AD_Read_Tensao( AD_Bateria );
+        Tsaida    = AD_Read_Tensao( AD_Saida );
+    
+        
+        sprinti(txt, "Partindo: %u", (int)i );
+        Lcd_Out(1,1, txt);
+        
+        /* Mostra Bateria no LCD */
+        sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
+        Lcd_Out(2,1, txt);
+        /* Mostra Tensão de Saída do NoBreak no LCD */
+        sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
+        Lcd_Out(2,13, txt);
+        
+        
+        Delay_ms(1000);
+    
+    
+    }
+    
+    
+    
 
     /* WHILE PRINCIPAL */
     while (1) {
@@ -84,24 +136,52 @@ void main( void ) {
         /* Limpa LCD */
         Lcd_Cmd(_LCD_CLEAR);
         
-        /* Mostra tensões no LCD */
+        /* Fonte ligada? */
+        if ( (Tfonte/100) > 4  ) {
         
+             /* Liga o conversor */
+             Conversor  = true;
+             /* Mostra tela normal com as tensões */
+             MostraTensoes_LCD( Trede, Tfonte, Tbateria, Tsaida );
         
-        /* Mostra Rede no LCD*/
-        sprinti(txt, "Rede:%uV", (uint16_t)Trede/10 );
-        Lcd_Out(1,1, txt);
 
-        /* Mostra Fonte no LCD */
-        sprintf(txt, "%2.1fV", Tfonte/100. );
-        Lcd_Out(1,12, txt);
+        } else {
+        
+           /* Tensão na Saída normal, ou seja, maior que 108 volts */
+            if ( (Tsaida/10) >= 112 ) {
 
-        /* Mostra Bateria no LCD */
-        sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
-        Lcd_Out(2,1, txt);
+               /* Liga o conversor */
+               Conversor  = true;
+               /* Mostra tela normal com as tensões */
+               MostraTensoes_LCD( Trede, Tfonte, Tbateria, Tsaida );
 
-        /* Mostra Tensão de Saída do NoBreak no LCD */
-        sprinti(txt, "%uV", (uint16_t)AD_Read_Tensao(AD_Saida)/10 );
-        Lcd_Out(2,13, txt);
+            /* Tensão  */
+            } else if ( (Tsaida/10) <= 108 ) {
+
+
+                /* Desliga o conversor */
+                Conversor  = false;
+               
+               
+                Lcd_Out( 1, 1, "Conv. Desligado" );
+                /* Mostra Bateria no LCD */
+                sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
+                Lcd_Out(2,1, txt);
+                /* Mostra Tensão de Saída do NoBreak no LCD */
+                sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
+                Lcd_Out(2,13, txt);
+
+            } else {
+            
+               Lcd_Out( 1, 1, "Entre 108 e 112V" );
+            
+            }
+            
+        
+        }
+
+
+        
 
         /* Tempo entre atualizações da Tela do LCD */
         Delay_ms(1000);
