@@ -6,6 +6,7 @@
 
 #include <built_in.h>
 #include <stdint.h>
+#include "Basic_Macros.h"
 #include "HAL_P18F46K22.h"
 
 /******************************************************************************/
@@ -30,18 +31,15 @@ long AD_Read_Tensao( uint8_t numAD ) {
     int  tensaoAD =0;
     long tlong;
     char txt[22];
-    
-    /**********************************************************************/
-    /* Tensão da Bateria */
-    tensaoAD  = ADC_Read(numAD);                 // get ADC value from 0nd channel
+
+    /* Leitura da tensão no ADC */
+    tensaoAD  = ADC_Read(numAD);              // get ADC value from 0nd channel
     tlong = (long)tensaoAD * 3000;           // covert adc reading to milivolts
     tlong = tlong / 1023;                    // 0..1023 -> 0-5000mV
     // Retorna um valor lido
     return tlong;
-}
-
-
-
+    
+}//~
 
 
 
@@ -57,123 +55,67 @@ long AD_Read_Tensao( uint8_t numAD ) {
 void main( void ) {
 
 
-    int Trede =0, Tfonte =0, Tbateria =0, Tsaida =0, Cconversor =0;
-    long tlong; long ch;
-    char txt[20];
+    long  Trede=0, Tfonte =0, Tbateria =0, Tsaida =0;
+    char  txt[20];
 
+    /* Copnfigurações do Hardware - PIC, ADC, LCD, etc */
+    HAL_P18_Initialize();
 
-    HAL_P18_Initialize();                // Configura portos para Digital
-
-
+    /* Inicia com Conversor Desligado (Não Produz Energia) */
+    Conversor  = false;
 
     Lcd_Out(1,2, "JSM Engenharia");         // Write text in first row
     Lcd_Out(2,5, "NB-400W");
     Delay_ms(2000);
     Lcd_Cmd(_LCD_CLEAR);
 
-    /* Em 0 desliga */
-    Conversor  = 1;                         // Liga conversor
+    /* Liga o Conversor */
+    Conversor  = true;
 
     /* WHILE PRINCIPAL */
     while (1) {
 
-
-
-
-//      Trede  = ADC_Read(0);                 // get ADC value from 0nd channel
-//      tlong = (long)Trede * 3000;           // covert adc reading to milivolts
-//      tlong = tlong / 1023;                  // 0..1023 -> 0-5000mV (*5000)
-//  //                                         // ** exelente rotina muito precisa
-//  //
-//      Lcd_Out(1,1, "Rede:");
-//      ch     = tlong / 1000;                 // extract volts digit
-//      Lcd_Chr_CP(48+ch);                    // write ASCII digit at 2nd row, 9th column
-//
-//      ch    = (tlong / 100) % 10;            // extract 0.1 volts digit
-//      Lcd_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//
-//      ch    = (tlong / 10) % 10;             // extract 0.01 volts digit
-//      Lcd_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//
-//     // ch    = tlong % 10;                    // extract 0.001 volts digit
-//     // LCD_Chr_CP('.');
-//     // LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//      Lcd_Chr_CP('V');
-//      Delay_ms(300);
-//
-//      // Tensão Elo Teste da  Fonte
-//      Tfonte  = ADC_Read(1);                   // get ADC value from 0nd channel
-//      tlong = (long)Tfonte * 3000;           // covert adc reading to milivolts
-//      tlong = tlong / 1023;                  // 0..1023 -> 0-5000mV
-//
-//      ch     = tlong / 1000;                 // extract volts digit
-//      Lcd_Chr(1,12,48+ch);                    // write ASCII digit at 2nd row, 9th column
-//
-//      ch    = (tlong / 100) % 10;            // extract 0.1 volts digit
-//      Lcd_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//      Lcd_Chr_CP('.');
-//
-//      ch    = (tlong / 10) % 10;             // extract 0.01 volts digit
-//      Lcd_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//    //  ch    = tlong % 10;                    // extract 0.001 volts digit
-//    //  LCD_Chr_CP(48+ch);                     // write ASCII digit at cursor point
-//      Lcd_Chr_CP('V');
-//      Delay_ms(300);
-
-
-
-
-
-
-
-
-
-
-      // Rede
-      sprinti(txt, "Rede:%uV", (uint16_t)AD_Read_Tensao(AD_Rede)/10 );
-      Lcd_Out(1,1, txt);
-      Delay_ms(300);
-      
-      // Fonte
-      sprinti(txt, "%uV", (uint16_t)AD_Read_Tensao(AD_Fonte)/10 );
-      Lcd_Out(1,12, txt);
-      Delay_ms(300);
-
-
-
-//      /**********************************************************************/
-//      /* Tensão da Bateria */
-//      Tbateria  = ADC_Read(2);                 // get ADC value from 0nd channel
-//      tlong = (long)Tbateria * 3000;           // covert adc reading to milivolts
-//      tlong = tlong / 1023;                    // 0..1023 -> 0-5000mV
-//      /* Bat.: 11.8V */
-//      sprintf(txt, "Bat.:%2.1fV", tlong/100. );
-//      Lcd_Out(2,1, txt);
-//
-//      Delay_ms(300);
-
-
-
+        /* Faz a leitura das Tensões */
+        Trede     = AD_Read_Tensao( AD_Rede );
+        Tfonte    = AD_Read_Tensao( AD_Fonte );
+        Tbateria  = AD_Read_Tensao( AD_Bateria );
+        Tsaida    = AD_Read_Tensao( AD_Saida );
         
-        /* Bat.: 11.8V */
-        sprintf(txt, "Bat.:%2.1fV", AD_Read_Tensao( AD_Bateria )/100. );
+        /* Limpa LCD */
+        Lcd_Cmd(_LCD_CLEAR);
+        
+        /* Mostra tensões no LCD */
+        
+        
+        /* Mostra Rede no LCD*/
+        sprinti(txt, "Rede:%uV", (uint16_t)Trede/10 );
+        Lcd_Out(1,1, txt);
+
+        /* Mostra Fonte no LCD */
+        sprintf(txt, "%2.1fV", Tfonte/100. );
+        Lcd_Out(1,12, txt);
+
+        /* Mostra Bateria no LCD */
+        sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
         Lcd_Out(2,1, txt);
 
-        Delay_ms(300);
+        /* Mostra Tensão de Saída do NoBreak no LCD */
+        sprinti(txt, "%uV", (uint16_t)AD_Read_Tensao(AD_Saida)/10 );
+        Lcd_Out(2,13, txt);
 
-
-      /**********************************************************************/
-      /* Tensão de Saída do NoBreak */
-//      Tsaida  = ADC_Read(3);                   // get ADC value from 0nd channel
-//      tlong = (long)Tsaida * 3000;           // covert adc reading to milivolts
-//      tlong = tlong / 1023;                  // 0..1023 -> 0-5000mV
-      /* 122V */
-      sprinti(txt, "%uV", (uint16_t)AD_Read_Tensao(AD_Saida)/10 );
-      Lcd_Out(2,13, txt);
-
-      Delay_ms(300);
+        /* Tempo entre atualizações da Tela do LCD */
+        Delay_ms(1000);
     }
 }
+
+
+
+
+
+
+
+
+
 
 
 
