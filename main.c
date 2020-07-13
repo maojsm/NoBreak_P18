@@ -42,7 +42,7 @@ long AD_Read_Tensao( uint8_t numAD ) {
 }//~
 
 
-void MostraTensoes_LCD(long  Trede, long Tfonte, long Tbateria, long Tsaida ){
+void Lcd_MostraTensoes(long  Trede, long Tfonte, long Tbateria, long Tsaida ){
 
     char  txt[20];
     
@@ -80,49 +80,20 @@ void main( void ) {
     long  Trede=0, Tfonte =0, Tbateria =0, Tsaida =0;
     char  txt[20];
     char  i=0;
-
+    bool  PartidaInicial = false;
     /* Copnfigurações do Hardware - PIC, ADC, LCD, etc */
     HAL_P18_Initialize();
 
-    /* Inicia com Conversor Desligado (Não Produz Energia) */
-    Conversor  = false;
-
-    Lcd_Out(1,2, "JSM Engenharia");         // Write text in first row
-    Lcd_Out(2,5, "NB-400W");
-    Delay_ms(2000);
-    Lcd_Cmd(_LCD_CLEAR);
-
     /* Liga o Conversor */
     Conversor  = true;
+    /* Tela de boas vindas */
+    Lcd_Out(1,2, "JSM Engenharia");
+    Lcd_Out(2,1, "NB-400W v.01.01.01");
+    /* Tempo partida do COnversor e geração da saída */
+    Delay_ms(3000);
     
-    /* Aguarda o Conversor partir e atingir 112V */
-    for (i=0; i < 10 ; i++) {
-    
-        /* Faz a leitura das Tensões */
-        Trede     = AD_Read_Tensao( AD_Rede );
-        Tfonte    = AD_Read_Tensao( AD_Fonte );
-        Tbateria  = AD_Read_Tensao( AD_Bateria );
-        Tsaida    = AD_Read_Tensao( AD_Saida );
-    
-        
-        sprinti(txt, "Partindo: %u", (int)i );
-        Lcd_Out(1,1, txt);
-        
-        /* Mostra Bateria no LCD */
-        sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
-        Lcd_Out(2,1, txt);
-        /* Mostra Tensão de Saída do NoBreak no LCD */
-        sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
-        Lcd_Out(2,13, txt);
-        
-        
-        Delay_ms(1000);
-    
-    
-    }
-    
-    
-    
+    /* Limpa display Lcd */
+    Lcd_Cmd(_LCD_CLEAR);
 
     /* WHILE PRINCIPAL */
     while (1) {
@@ -135,54 +106,67 @@ void main( void ) {
         
         /* Limpa LCD */
         Lcd_Cmd(_LCD_CLEAR);
+
+        /******************************************************************
+
+          CONTROLE DE OPERAçãO DO CONVERSOR
+
+        *******************************************************************/
+        /* Conversor Desligado - Tenta Ligar */
+        if ( Conversor == false ){
         
-        /* Fonte ligada? */
-        if ( (Tfonte/100) > 4  ) {
-        
-             /* Liga o conversor */
-             Conversor  = true;
-             /* Mostra tela normal com as tensões */
-             MostraTensoes_LCD( Trede, Tfonte, Tbateria, Tsaida );
-        
-
-        } else {
-        
-           /* Tensão na Saída normal, ou seja, maior que 108 volts */
-            if ( (Tsaida/10) >= 112 ) {
-
-               /* Liga o conversor */
-               Conversor  = true;
-               /* Mostra tela normal com as tensões */
-               MostraTensoes_LCD( Trede, Tfonte, Tbateria, Tsaida );
-
-            /* Tensão  */
-            } else if ( (Tsaida/10) <= 108 ) {
-
-
-                /* Desliga o conversor */
-                Conversor  = false;
-               
-               
-                Lcd_Out( 1, 1, "Conv. Desligado" );
+            /*  */
+            if ( (Tfonte/100) > 4 || (Tsaida/10) >= 112 ){
+            
+                /* Liga o conversor */
+                Conversor  = true;
+                
+                Lcd_Out( 1, 1, "Partida Conv." );
                 /* Mostra Bateria no LCD */
                 sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
                 Lcd_Out(2,1, txt);
                 /* Mostra Tensão de Saída do NoBreak no LCD */
                 sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
                 Lcd_Out(2,13, txt);
-
-            } else {
-            
-               Lcd_Out( 1, 1, "Entre 108 e 112V" );
-            
+                /* Atraso para garantir que a partida do conversor antes do proximo teste */
+                Delay_ms(3000);
+                Lcd_Cmd(_LCD_CLEAR);
             }
+
+        /* Conversor Ligado - Monitora Tensões p/ Desligar por Proteção */
+        } else {
+        
+            /* Desliga Conversor se Tensão da Saída Baixar de 108 volts */
+            if ( (Tsaida/10) <= 108 ){
             
-        
+                /* Desliaga o conversor - Proteção */
+                Conversor  = false;
+                
+            }
         }
-
-
         
+        /******************************************************************
+        
+          EXIBE INFORMAçõES NO LCD
+        
+        *******************************************************************/
+        if ( Conversor == true ) {
 
+            /* Mostra tela normal com as tensões */
+            Lcd_MostraTensoes( Trede, Tfonte, Tbateria, Tsaida );
+        
+        
+        } else {
+        
+            Lcd_Out( 1, 1, "Conv. Desligado" );
+            /* Mostra Bateria no LCD */
+            sprintf(txt, "Bat.:%2.1fV", Tbateria/100. );
+            Lcd_Out(2,1, txt);
+            /* Mostra Tensão de Saída do NoBreak no LCD */
+            sprinti(txt, "%uV", (uint16_t)Tsaida/10 );
+            Lcd_Out(2,13, txt);
+        }
+        
         /* Tempo entre atualizações da Tela do LCD */
         Delay_ms(1000);
     }
