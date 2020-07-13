@@ -86,17 +86,18 @@ void main( void ) {
 
     /* Liga o Conversor */
     Conversor  = true;
+    
     /* Tela de boas vindas */
     Lcd_Out(1,2, "JSM Engenharia");
-    Lcd_Out(2,1, "NB-400W v.01.01.01");
+    Lcd_Out(2,1, "NB-400W v.01.01");
     /* Tempo partida do COnversor e geração da saída */
-    Delay_ms(3000);
-    
+    Delay_ms(2000);
+
     /* Limpa display Lcd */
     Lcd_Cmd(_LCD_CLEAR);
 
     /* WHILE PRINCIPAL */
-    while (1) {
+    while (1){
 
         /* Faz a leitura das Tensões */
         Trede     = AD_Read_Tensao( AD_Rede );
